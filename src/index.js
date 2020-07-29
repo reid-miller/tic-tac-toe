@@ -15,7 +15,7 @@ function Square(props) {
     if(props.visible) {
       return (
         <button className="" onClick={() =>  props.onClick(3)}>
-          AI Go First
+          {props.text}
         </button>
       );
     } else {
@@ -94,8 +94,14 @@ function Square(props) {
         stepNumber: 0,
         xIsNext: true,
         onePlayer: true,
-        AISymbol: 'X',
+        AISymbol: 'O',
       }
+    }
+
+    AIFirst(){
+      this.setState({
+        AISymbol: 'X'
+      })
     }
 
     otherTurn(q) {
@@ -115,6 +121,10 @@ function Square(props) {
           stepNumber: history.length,
           xIsNext: !this.state.xIsNext
         });
+    }
+
+    refreshPage() {
+      window.location.reload(false);
     }
 
     handleClick(i) {
@@ -168,16 +178,19 @@ function Square(props) {
 
     render() {
 
-      if (this.state.onePlayer && this.state.xIsNext && this.state.stepNumber !== 0 && this.state.AISymbol === 'X') {
+      if (this.state.onePlayer && this.state.xIsNext && this.state.AISymbol === 'X') {
         this.otherTurn();
       } else if(!this.state.xIsNext && this.state.AISymbol === 'O' && this.state.onePlayer){
         this.otherTurn();
       }
 
       const history = this.state.history;
-      const current = history[this.state.stepNumber];
+      var current = history[this.state.stepNumber];
+      // Fix bug where current.squares went undefined after a full board
+      if (current.squares === undefined)
+        current = history[this.state.stepNumber-1];
+
       const winner = calculateWinner(current.squares);
-      
 
       const moves = history.map((step, move) => {
         const desc = move ?
@@ -213,8 +226,14 @@ function Square(props) {
           <div className="game-info">
             <div>{status}</div>
             <FirstPick
-              onClick={(k) => this.otherTurn()}
+              onClick={(k) => this.AIFirst()}
+              text="AI Go First"
               visible={this.state.stepNumber === 0 && this.state.onePlayer}
+            />
+            <FirstPick
+              onClick={(k) => this.refreshPage()}
+              text="Restart"
+              visible={winner}
             />
             <PlayerSelect
             onClick={(j) => this.playerClick(j)}
@@ -228,6 +247,9 @@ function Square(props) {
 //
 // <ol>{moves}</ol>
   function calculateWinner(squares) {
+    if (squares == null) {
+      return 'TIE'
+    }
     const lines = [
       [0, 1, 2],
       [3, 4, 5],
@@ -240,8 +262,14 @@ function Square(props) {
     ];
     for (let i = 0; i < lines.length; i++) {
       const [a, b, c] = lines[i];
+      try {
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
         return squares[a];
+      }
+      } catch(err) {
+        console.log(err.message);
+        console.log(a + "" + b + "" + c)
+        console.log(squares);
       }
     }
 
